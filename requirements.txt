@@ -1,0 +1,15 @@
+#torch==2.0.1 --extra-index-url https://download.pytorch.org/whl/cu116
+transformers==4.30.2
+deepspeed==0.10.3
+datasets==2.5.2
+accelerate==0.23.0
+Pillow==10.0.1
+pyaml==20.4.0
+redis==3.4.1
+msgpack==0.5.6
+coloredlogs==10.0
+gunicorn==20.0.4
+flask_cors==3.0.10
+flask==2.0.2
+scikit-learn==1.0.2
+setuptools==58.0.4
