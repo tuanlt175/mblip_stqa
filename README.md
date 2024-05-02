@@ -5,6 +5,7 @@
 2. [Train model](#train_model) <br>
 3. [Evaluate model](#evaluate_model) <br>
 
+Our model is available at [letuan/mblip-mt0-xl-vivqa ](https://huggingface.co/letuan/mblip-mt0-xl-vivqa)
 
 ## 1. Install <a name="setup"></a>
 Env requirements:
