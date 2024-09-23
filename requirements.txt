@@ -1,8 +1,7 @@
-#torch==2.0.1 --extra-index-url https://download.pytorch.org/whl/cu116
-transformers==4.30.2
-deepspeed==0.10.3
-datasets==2.5.2
-accelerate==0.23.0
+transformers==4.44.2
+deepspeed==0.14.2
+datasets==2.14.6
+accelerate==0.30.1
 Pillow==10.0.1
 pyaml==20.4.0
 redis==3.4.1
