@@ -29,8 +29,15 @@ def main():
     )
     parser.add_argument(
         "--submission_file",
+        default=None,
         type=str,
         help="Đường dẫn đến file json chứa câu trả lời của model.",
+    )
+    parser.add_argument(
+        "--output_folder",
+        default=None,
+        type=str,
+        help="Đường dẫn đến thư mục chứa kết quả đánh giá.",
     )
     parser.add_argument("--batch_size", type=int, default=2, help="Batch size")
     parser.add_argument(
@@ -80,19 +87,28 @@ def main():
         for item, answer in zip(data[start:end], pred_answers):
             item["pred_answer"] = answer
 
-    with open(args.submission_file, "w") as file:
-        json.dump(
-            {x["id"]: x["pred_answer"] for x in data},
-            file, ensure_ascii=False, indent=4
-        )
-
     gts = {x["id"]: [normalize(x["answer"])] for x in data}
     gens = {x["id"]: [x["pred_answer"]] for x in data}
 
     results = compute_scores(gts, gens)
-    print("Số dữ liệu: ", len(data))
-    print("BLEU: ", results["BLEU"])
-    print("CIDEr:", results["CIDEr"])
+    output_log = f"## Model: {args.model} ##"
+    output_log += "\n    - Số dữ liệu: " + str(len(data))
+    output_log += "\n    - BLEU: " + str(round(results["BLEU"], 4)).replace(".", ",")
+    output_log += "\n    - CIDEr: " + str(round(results["CIDEr"], 4)).replace(".", ",")
+    print(output_log)
+
+    if isinstance(args.output_folder, str):
+        output_file = "-".join(args.model.strip("/").split("/")[-2:]) + ".txt"
+        output_file = os.path.join(args.output_folder, output_file)
+        with open(output_file, "w") as file:
+            file.write(output_log)
+
+    if isinstance(args.submission_file, str):
+        with open(args.submission_file, "w") as file:
+            json.dump(
+                {x["id"]: x["pred_answer"] for x in data},
+                file, ensure_ascii=False, indent=4
+            )
 
 
 if __name__ == "__main__":

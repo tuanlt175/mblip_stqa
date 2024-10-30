@@ -2,6 +2,8 @@
 import re
 import unicodedata as ud
 import itertools
+import os
+import shutil
 
 __specials__ = [r"==>", r"->", r"\.\.\.", r">>"]
 __digit__ = r"\d+([\.,_]\d+)+"
@@ -228,3 +230,21 @@ def sentence_tokenize(context):
     contexts = [refine_sentences(sentences) for sentences in contexts]
     contexts = flatten_list(contexts)
     return contexts
+
+
+def remove_ckpt_golbal_state(output_dir):
+    ckpt_folders = [
+        os.path.join(output_dir, fname)
+        for fname in os.listdir(output_dir) if fname.startswith("checkpoint")
+    ]
+    for ckpt in ckpt_folders:
+        del_files = [
+            os.path.join(ckpt, fname)
+            for fname in os.listdir(ckpt) if fname.startswith("global_step")
+        ]
+        for file_name in del_files:
+            try:
+                shutil.rmtree(file_name)
+            except Exception as e:
+                print(e)
+    return

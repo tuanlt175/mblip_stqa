@@ -79,7 +79,7 @@ class VRC:
         ).to(self.device)
         inputs["pixel_values"] = inputs["pixel_values"].to(self.torch_dtype)
 
-        if any(["image_text" in item for item in data]):
+        if "st" in self.model_type:
             image_texts = [item.get("image_text", "") for item in data]
             imgtext_inputs = self.processor.tokenizer(
                 image_texts,
@@ -90,6 +90,18 @@ class VRC:
             )
             inputs["imgtxt_input_ids"] = imgtext_inputs["input_ids"].to(self.device)
             inputs["imgtxt_attention_mask"] = imgtext_inputs["attention_mask"].to(self.device)
+
+        if self.model.config.use_decoder_only_language_model:
+            prefix_answers_encoding = self.processor.tokenizer(
+                ["Answer:"] * len(texts),
+                padding="longest",
+                truncation=True,
+                return_tensors="pt",
+            )
+            inputs["input_ids"] = torch.cat(
+                (inputs["input_ids"], prefix_answers_encoding["input_ids"].to(self.device)), dim=1)
+            inputs["attention_mask"] = torch.cat((inputs["attention_mask"], prefix_answers_encoding["attention_mask"].to(self.device)),
+                                                 dim=1)
 
         outs = self.model.generate(**inputs, max_new_tokens=self.answer_max_len, num_beams=num_beams)
         answers = self.processor.batch_decode(outs, skip_special_tokens=True)

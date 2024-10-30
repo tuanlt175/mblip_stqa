@@ -10,6 +10,7 @@ from transformers import (
     set_seed,
     Trainer,
     DefaultDataCollator,
+    AutoConfig,
 )
 from transformers.training_args import TrainingArguments
 from icvrc.arguments import (
@@ -17,9 +18,9 @@ from icvrc.arguments import (
     DataTrainingArguments
 )
 from icvrc.model_map import get_model_type_class
+from icvrc.utils import remove_ckpt_golbal_state
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["MAX_JOBS"] = "8"
 
@@ -99,32 +100,36 @@ def main():
 
     # region Load pretrained model and tokenizer
     processor = model_class_map.processor_class.from_pretrained(model_args.model_name_or_path)
+    model_config = AutoConfig.from_pretrained(model_args.model_name_or_path)
     # endregion
 
     # region Load datasets
     train_dataset = model_class_map.dataset_class(
-        data_dir=data_args.data_folder,
         processor=processor,
         question_max_len=data_args.question_max_len,
         answer_max_len=data_args.answer_max_len,
         pad_label_id=-100,
         max_data_number=data_args.max_data_number,
-        images_folder="training-images",
-        data_file="preprocessed_vlsp2023_train.json",
+        images_folder=data_args.train_image_folder,
+        data_file=data_args.train_data_file,
+        is_decoder_only_lm=model_config.use_decoder_only_language_model,
     )
     hf_train_dataset = train_dataset.get_hf_dataset()
 
-    eval_dataset = model_class_map.dataset_class(
-        data_dir=data_args.data_folder,
-        processor=processor,
-        question_max_len=data_args.question_max_len,
-        answer_max_len=data_args.answer_max_len,
-        pad_label_id=-100,
-        max_data_number=data_args.max_data_number,
-        images_folder="dev-images",
-        data_file="preprocessed_vlsp2023_dev.json",
-    )
-    hf_eval_dataset = eval_dataset.get_hf_dataset()
+    if isinstance(data_args.dev_data_file, str):
+        eval_dataset = model_class_map.dataset_class(
+            processor=processor,
+            question_max_len=data_args.question_max_len,
+            answer_max_len=data_args.answer_max_len,
+            pad_label_id=-100,
+            max_data_number=data_args.max_data_number,
+            images_folder=data_args.dev_image_folder,
+            data_file=data_args.dev_data_file,
+            is_decoder_only_lm=model_config.use_decoder_only_language_model,
+        )
+        hf_eval_dataset = eval_dataset.get_hf_dataset()
+    else:
+        hf_eval_dataset = None
 
     # endregion
 
@@ -142,6 +147,9 @@ def main():
     data_collator = DefaultDataCollator()
 
     # Initialize our Trainer
+    # training_args.save_only_model = True
+    training_args.load_best_model_at_end = True
+
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -151,6 +159,7 @@ def main():
         tokenizer=processor,
     )
     trainer.train()
+    remove_ckpt_golbal_state(training_args.output_dir)
     processor.save_pretrained(training_args.output_dir)
 
 

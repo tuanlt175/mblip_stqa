@@ -4,7 +4,7 @@ In Vietnamese, there is currently limited availability of datasets and methodolo
 To address this challenging task, we propose an approach using three primary models: a Scene Text Recognition model, a Vision model, and a Language model. Particularly, the Scene Text Recognition model is responsible for extracting scene text from image, the Vision model is tasked with extracting visual features from image, and the Language model takes the output from the two aforementioned models as input and generates the corresponding answer for the question. Our approach has achieved a CIDEr score of 3.6384 in the private test set, ranking first among competing teams.
 
 <p align="center">
-    <img width="400" alt="overview" src="data/figures/overview.png"><br>
+    <img width="800" alt="overview" src="figures/overview.png"><br>
     Diagram of our proposed model
 </p>
 
@@ -15,9 +15,18 @@ To address this challenging task, we propose an approach using three primary mod
 2. [Train model](#train_model) <br>
 3. [Evaluate model](#evaluate_model) <br>
 
-Our model is available at [letuan/mblip-mt0-xl-vivqa ](https://huggingface.co/letuan/mblip-mt0-xl-vivqa)
+Our model is available at [letuan/mblip-mt0-xl-vivqa ](https://huggingface.co/letuan/mblip-mt0-xl-vivqa). Please download model:
+```bash
+huggingface-cli download letuan/mblip-mt0-xl-vivqa  --local-dir <the folder on your computer to store the model>
+```
 
 ## 1. Install <a name="setup"></a>
+**Clone project:**
+```bash
+git clone https://github.com/tuanlt175/mblip_stqa.git
+cd mblip_stqa/
+```
+
 **Using Docker:**
 ```bash
 sudo docker build -t vivrc_mblip:dev -f Dockerfile .
@@ -30,15 +39,16 @@ sudo docker run --gpus all --network host \
     --volume ${PWD}/icvrc:/code/icvrc \
     --volume ${PWD}/data:/code/data \
     --volume ${PWD}/models:/code/models \
-    --volume ${PWD}/deepspeed_train.sh:/code/deepspeed_train.sh \
+    --volume ${PWD}/deepspeed_train_mblip_bloomz.sh:/code/deepspeed_train_mblip_bloomz.sh \
+    --volume ${PWD}/deepspeed_train_mblip_mt0.sh:/code/deepspeed_train_mblip_mt0.sh \
     --volume ${PWD}/deepspeed_config.json:/code/deepspeed_config.json \
     -it vivrc_mblip:dev /bin/bash
 ```
 
 Then, run the code below:
 ```bash
-chmod +x deepspeed_train.sh
-./deepspeed_train.sh
+chmod +x deepspeed_train_mblip_mt0.sh
+./deepspeed_train_mblip_mt0.sh
 ```
 
 ## 3. Evaluate model <a name="evaluate_model"></a>
@@ -61,6 +71,6 @@ chmod +x evaluate.sh
 ## 4. Examples
 
 <p align="center">
-    <img width="400" alt="overview" src="data/figures/examples.png"><br>
+    <img width="800" alt="overview" src="figures/examples.png"><br>
     Generated VQA answers of the proposed model in comparison with that of the baselines.
 </p>

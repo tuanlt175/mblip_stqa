@@ -5,8 +5,15 @@ from transformers import (
     # InstructBlipProcessor,
     # InstructBlipForConditionalGeneration
 )
-from icvrc.models.blip2_mt0 import Blip2ForT5VQA, Blip2ForT5VQAV2, Blip2ForT5VQAV3
-from icvrc.mydatasets import VRCTorchDatasetV1, VRCTorchDatasetV2
+from icvrc.models.mblip_vqa import (
+    Blip2ForVQA,
+    Blip2ForVQAwST,
+    Blip2ForVQAwQA,
+    Blip2ForVQAwSTQA,
+    Blip2ForVQAwQAQE,
+    Blip2ForVQAwSTQAQE
+)
+from icvrc.mydatasets import VRCTorchDatasetForMBLIP, VRCTorchDatasetForMBLIPwST
 import os
 
 
@@ -30,26 +37,44 @@ class ModelVersionMap():
         return self.__str__
 
 
-DEFAULT_MODEL_TYPE = "mblip-mt0"
+DEFAULT_MODEL_TYPE = "mblip-vqa"
 MAP_CONFIG_TOKENIZER_MODEL_CLASS = {
-    "mblip-mt0": ModelVersionMap(
+    "mblip-vqa": ModelVersionMap(
         processor_class=Blip2Processor,
-        model_class=Blip2ForT5VQA,
-        dataset_class=VRCTorchDatasetV1,
-        description="Blip2 Model"
+        model_class=Blip2ForVQA,
+        dataset_class=VRCTorchDatasetForMBLIP,
+        description="mBlip Model"
     ),
-    "mblip-mt0-v2": ModelVersionMap(
+    "mblip-vqa-st": ModelVersionMap(
         processor_class=Blip2Processor,
-        model_class=Blip2ForT5VQAV2,
-        dataset_class=VRCTorchDatasetV2,
-        description="Blip2 Model V2"
+        model_class=Blip2ForVQAwST,
+        dataset_class=VRCTorchDatasetForMBLIPwST,
+        description="mBlip Model with Scene Text"
     ),
-    "mblip-mt0-v3": ModelVersionMap(
+    "mblip-vqa-qa": ModelVersionMap(
         processor_class=Blip2Processor,
-        model_class=Blip2ForT5VQAV3,
-        dataset_class=VRCTorchDatasetV2,
-        description="Blip2 Model V3"
-    )
+        model_class=Blip2ForVQAwQA,
+        dataset_class=VRCTorchDatasetForMBLIP,
+        description="mBlip Model with Question-Aware"
+    ),
+    "mblip-vqa-st-qa": ModelVersionMap(
+        processor_class=Blip2Processor,
+        model_class=Blip2ForVQAwSTQA,
+        dataset_class=VRCTorchDatasetForMBLIPwST,
+        description="mBlip Model with Scene Text and Question-Aware"
+    ),
+    "mblip-vqa-qa-qe": ModelVersionMap(
+        processor_class=Blip2Processor,
+        model_class=Blip2ForVQAwQAQE,
+        dataset_class=VRCTorchDatasetForMBLIP,
+        description="mBlip Model with Question-Aware and New Embedding for Qformer"
+    ),
+    "mblip-vqa-st-qa-qe": ModelVersionMap(
+        processor_class=Blip2Processor,
+        model_class=Blip2ForVQAwSTQAQE,
+        dataset_class=VRCTorchDatasetForMBLIPwST,
+        description="mBlip Model with Scene Text and Question-Aware (New Embedding for Qformer)"
+    ),
 }
 
 

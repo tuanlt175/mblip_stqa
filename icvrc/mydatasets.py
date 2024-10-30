@@ -6,12 +6,11 @@ from PIL import Image
 from datasets import Dataset
 
 
-class VRCTorchDatasetV1():
+class VRCTorchDatasetForMBLIP():
     raw_features = ["image_file", "question", "answer"]
 
     def __init__(
         self,
-        data_dir,
         processor,
         question_max_len=48,
         answer_max_len=64,
@@ -19,16 +18,15 @@ class VRCTorchDatasetV1():
         max_data_number=None,
         images_folder="training-images",
         data_file="vlsp2023_train_data.json",
+        is_decoder_only_lm=False,
     ):
         self.processor = processor
         self.question_max_len = question_max_len
         self.answer_max_len = answer_max_len
         self.pad_label_id = pad_label_id
+        self.is_decoder_only_lm = is_decoder_only_lm
 
-        self._data = self._read_data(
-            os.path.join(data_dir, images_folder),
-            data_file=os.path.join(data_dir, data_file)
-        )
+        self._data = self._read_data(images_folder, data_file)
         if max_data_number is not None:
             self._data = self._data[:max_data_number]
 
@@ -58,7 +56,9 @@ class VRCTorchDatasetV1():
         hf_train_dataset = hf_train_dataset.map(
             self._preprocess_data,
             batched=True,
-            remove_columns=self.raw_features
+            remove_columns=self.raw_features,
+            num_proc=4,
+            keep_in_memory=True,
         )
         return hf_train_dataset
 
@@ -75,20 +75,38 @@ class VRCTorchDatasetV1():
             truncation=True,
             return_tensors="pt",
         )
-        answers_encoding = self.processor.tokenizer(
-            examples["answer"],
-            max_length=self.answer_max_len,
-            padding="max_length",
-            truncation=True,
-            return_tensors="pt",
-        )
+        if self.is_decoder_only_lm:
+            bos_token = self.processor.tokenizer.bos_token
+            eos_token = self.processor.tokenizer.eos_token
+            answers = [f"Answer: {bos_token}{a}{eos_token}" for a in examples["answer"]]
+            answers_encoding = self.processor.tokenizer(
+                answers,
+                max_length=self.answer_max_len,
+                padding="max_length",
+                truncation=True,
+                return_tensors="pt",
+                padding_side="right",
+            )
+            encoding["input_ids"] = torch.cat((encoding["input_ids"], answers_encoding["input_ids"]), dim=1)
+            encoding["attention_mask"] = torch.cat((encoding["attention_mask"], answers_encoding["attention_mask"]),
+                                                   dim=1)
+        else:
+            answers_encoding = self.processor.tokenizer(
+                examples["answer"],
+                max_length=self.answer_max_len,
+                padding="max_length",
+                truncation=True,
+                return_tensors="pt",
+            )
+
         label_ids = answers_encoding["input_ids"]
         label_ids = torch.where(label_ids != self.processor.tokenizer.pad_token_id, label_ids, self.pad_label_id)
         encoding["labels"] = label_ids
+
         return encoding
 
 
-class VRCTorchDatasetV2(VRCTorchDatasetV1):
+class VRCTorchDatasetForMBLIPwST(VRCTorchDatasetForMBLIP):
     raw_features = ["image_file", "image_text", "question", "answer"]
 
     def _read_data(self, image_folder, data_file):
@@ -120,6 +138,34 @@ class VRCTorchDatasetV2(VRCTorchDatasetV1):
             truncation=True,
             return_tensors="pt",
         )
+        if self.is_decoder_only_lm:
+            bos_token = self.processor.tokenizer.bos_token
+            eos_token = self.processor.tokenizer.eos_token
+            answers = [f"Answer: {bos_token}{a}{eos_token}" for a in examples["answer"]]
+            answers_encoding = self.processor.tokenizer(
+                answers,
+                max_length=self.answer_max_len,
+                padding="max_length",
+                truncation=True,
+                return_tensors="pt",
+                padding_side="right",
+            )
+            encoding["input_ids"] = torch.cat((encoding["input_ids"], answers_encoding["input_ids"]), dim=1)
+            encoding["attention_mask"] = torch.cat((encoding["attention_mask"], answers_encoding["attention_mask"]),
+                                                   dim=1)
+        else:
+            answers_encoding = self.processor.tokenizer(
+                examples["answer"],
+                max_length=self.answer_max_len,
+                padding="max_length",
+                truncation=True,
+                return_tensors="pt",
+            )
+
+        label_ids = answers_encoding["input_ids"]
+        label_ids = torch.where(label_ids != self.processor.tokenizer.pad_token_id, label_ids, self.pad_label_id)
+        encoding["labels"] = label_ids
+
         imgtext_encoding = self.processor.tokenizer(
             examples["image_text"],
             max_length=self.answer_max_len,
@@ -129,15 +175,4 @@ class VRCTorchDatasetV2(VRCTorchDatasetV1):
         )
         encoding["imgtxt_input_ids"] = imgtext_encoding["input_ids"]
         encoding["imgtxt_attention_mask"] = imgtext_encoding["attention_mask"]
-
-        answers_encoding = self.processor.tokenizer(
-            examples["answer"],
-            max_length=self.answer_max_len,
-            padding="max_length",
-            truncation=True,
-            return_tensors="pt",
-        )
-        label_ids = answers_encoding["input_ids"]
-        label_ids = torch.where(label_ids != self.processor.tokenizer.pad_token_id, label_ids, self.pad_label_id)
-        encoding["labels"] = label_ids
         return encoding

@@ -9,6 +9,6 @@ __pycache__/
 *.egg-info/
 .mypy_cache/
 .pytest_cache/
-models/
 env_install.sh
 mounts/
+_test.py

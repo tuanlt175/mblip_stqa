@@ -43,8 +43,17 @@ class ModelArguments:
 class DataTrainingArguments:
     """Arguments pertaining to what data we are going to input our model for training and eval."""
 
-    data_folder: str = field(
-        metadata={"help": "Thư mục chứa dữ liệu train và dev"},
+    train_image_folder: str = field(
+        metadata={"help": "Thư mục chứa hình ảnh cho dữ liệu train"},
+    )
+    train_data_file: str = field(
+        metadata={"help": "Thư mục chứa dữ liệu train"},
+    )
+    dev_image_folder: str = field(
+        default=None, metadata={"help": "Thư mục chứa hình ảnh cho dữ liệu dev"},
+    )
+    dev_data_file: str = field(
+        default=None, metadata={"help": "Thư mục chứa dữ liệu dev"},
     )
     question_max_len: int = field(
         default=64, metadata={"help": "Chiều dài tối đa của câu hỏi, tính theo số token."},
